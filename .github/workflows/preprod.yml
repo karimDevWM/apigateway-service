@@ -11,19 +11,19 @@ jobs:
           contents: read
           packages: write
         steps:
-          - name: 'Checkout GitHub Action'
-            uses: actions/checkout@main
+        - name: 'Checkout GitHub Action'
+          uses: actions/checkout@main
 
-          - name: 'Login to GitHub Container Registry'
-            uses: docker/login-action@v1
-            with:
+        - name: 'Login to GitHub Container Registry'
+          uses: docker/login-action@v1
+          with:
               registry: ghcr.io
               username: ${{github.actor}}
               password: ${{secrets.GH_TOKEN}}
 
-          - name: 'Retrieve previous build number'
-            id: get-build-number
-            run: |
+        - name: 'Retrieve previous build number'
+          id: get-build-number
+          run: |
                 BUILD_NUMBER=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
                 https://api.github.com/repos/${{ github.repository }}/actions/variables/BUILD_NUMBER | jq -r '.value')
     
@@ -45,8 +45,8 @@ jobs:
                   https://api.github.com/repos/${{ github.repository }}/actions/variables/BUILD_NUMBER \
                   -d "{\"value\":\"$NEW_BUILD_NUMBER\"}"
 
-          - name: 'Build Inventory Image'
-            run: |
+        - name: 'Build Inventory Image'
+          run: |
               docker build --tag ghcr.io/karimdevwm/apigateway-service:preprod-${{ env.NEW_BUILD_NUMBER }} .
               docker push ghcr.io/karimdevwm/apigateway-service:preprod-${{ env.NEW_BUILD_NUMBER }}
           
