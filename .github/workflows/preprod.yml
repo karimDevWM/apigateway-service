@@ -40,7 +40,7 @@ jobs:
             git config --global user.email "github-actions@github.com"
             git add .github/build_number.txt
             git commit -m "Increment build number to $NEW_BUILD_NUMBER" || echo "No changes to commit"
-            git push
+            git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
   
 
         - name: 'Login to GitHub Container Registry'
