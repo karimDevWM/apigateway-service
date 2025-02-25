@@ -49,11 +49,15 @@ jobs:
               registry: ghcr.io
               username: ${{github.actor}}
               password: ${{secrets.GH_TOKEN}}
+        
+        - name: Convert repository name to lowercase
+          id: repo_name
+          run: echo "REPO_NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
 
         - name: 'Build Inventory Image'
           run: |
-              docker build --tag ghcr.io/karimdevwm/apigateway-service:preprod-${{env.NEW_BUILD_NUMBER}} .
-              docker push ghcr.io/karimdevwm/apigateway-service:preprod-${{env.NEW_BUILD_NUMBER}}
+              docker build --tag ghcr.io/karimdevwm/${{env.REPO_NAME}}:preprod-${{env.NEW_BUILD_NUMBER}} .
+              docker push ghcr.io/karimdevwm/${{env.REPO_NAME}}:preprod-${{env.NEW_BUILD_NUMBER}}
           
     #   deploy:
     #     needs: push-store-docker-image
