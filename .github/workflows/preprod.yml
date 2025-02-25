@@ -56,7 +56,7 @@ jobs:
               docker push ghcr.io/karimdevwm/apigateway-service:preprod-${{env.NEW_BUILD_NUMBER}}
           
     #   deploy:
-    #     needs: push-store-image
+    #     needs: push-store-docker-image
     #     name: deploy image
     #     runs-on: ubuntu-latest
 
