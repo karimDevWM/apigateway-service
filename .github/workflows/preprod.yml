@@ -5,7 +5,7 @@ on:
     branches:
       - preprod
 jobs:
-      push-store-image:
+      push-store-docker-image:
         runs-on: ubuntu-latest
         permissions:
           contents: write
@@ -59,20 +59,20 @@ jobs:
               docker build --tag ghcr.io/karimdevwm/${{env.REPO_NAME}}:preprod-${{env.NEW_BUILD_NUMBER}} .
               docker push ghcr.io/karimdevwm/${{env.REPO_NAME}}:preprod-${{env.NEW_BUILD_NUMBER}}
           
-    #   deploy:
-    #     needs: push-store-docker-image
-    #     name: deploy image
-    #     runs-on: ubuntu-latest
+      deploy:
+        needs: push-store-docker-image
+        name: deploy image
+        runs-on: ubuntu-latest
 
-    #     steps:
-    #     - name: install ssh keys
-    #     # check this thread tounderstand why its needed:
-    #     # <https://stackoverflow.com/a/70447517
-    #       run: |
-    #         install -m 600 -D /dev/null ~/.ssh/id_rsa
-    #         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-    #         ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-    #     - name: connect and pull
-    #       run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"
-    #     - name: cleanup
-    #       run: rm -rf ~/.ssh
+        steps:
+        - name: install ssh keys
+        # check this thread tounderstand why its needed:
+        # <https://stackoverflow.com/a/70447517
+          run: |
+            install -m 600 -D /dev/null ~/.ssh/id_rsa
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+        - name: connect and pull
+          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && docker compose pull && docker compose up -d && exit"
+        - name: cleanup
+          run: rm -rf ~/.ssh
