@@ -14,7 +14,7 @@ jobs:
         - name: 'Checkout GitHub Action'
           uses: actions/checkout@main
         
-        - name: 'Retrieve Previous Build Number'
+        - name: 'Retrieve Previous Build Number frm file'
           id: get-build-number
           run: |
             BUILD_NUMBER_FILE=".github/build_number.txt"
