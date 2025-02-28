@@ -71,9 +71,26 @@ jobs:
             echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
             ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
         - name: Debug SSH Connection
           run: ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo SSH Connection Successful"
-        - name: connect and pull
-          run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && sudo docker compose pull && sudo docker compose up -d && exit"
+        
+        - name: Update Docker Compose Image Tag and Restart Services
+          run: |
+            ssh -tt ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+              cd ${{ secrets.WORK_DIR }}
+  
+              # Backup existing docker-compose.yml
+              cp docker-compose.yml docker-compose.yml.bak
+  
+              # Replace the old image tag with the new one from the pipeline
+              sed -i 's|ghcr.io/karimdevwm/${{env.REPO_NAME}}:[^ ]*|ghcr.io/karimdevwm/${{env.REPO_NAME}}:${{env.NEW_BUILD_NUMBER}}|' docker-compose.yml
+  
+              # Restart the services with the new image
+              docker compose down
+              docker compose pull
+              docker compose up -d
+            EOF
+
         - name: cleanup
           run: sudo rm -rf ~/.ssh
