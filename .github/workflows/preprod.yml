@@ -61,7 +61,7 @@ jobs:
           
       deploy:
         needs: push-store-docker-image
-        name: deploy image
+        name: deploy docker image
         runs-on: ubuntu-latest
 
         steps:
