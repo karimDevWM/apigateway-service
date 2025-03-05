@@ -56,8 +56,8 @@ jobs:
 
         - name: 'Build Inventory Image'
           run: |
-              docker build --tag ghcr.io/karimdevwm/${{env.REPO_NAME}}:preprod-${{env.NEW_BUILD_NUMBER}} .
-              docker push ghcr.io/karimdevwm/${{env.REPO_NAME}}:preprod-${{env.NEW_BUILD_NUMBER}}
+              docker build --tag ghcr.io/karimdevwm/${{env.REPO_NAME}}:${{env.NEW_BUILD_NUMBER}} .
+              docker push ghcr.io/karimdevwm/${{env.REPO_NAME}}:${{env.NEW_BUILD_NUMBER}}
           
       deploy:
         needs: push-store-docker-image
