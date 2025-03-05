@@ -87,9 +87,10 @@ jobs:
               sed -i 's|ghcr.io/karimdevwm/${{env.REPO_NAME}}:[^ ]*|ghcr.io/karimdevwm/${{env.REPO_NAME}}:${{env.NEW_BUILD_NUMBER}}|' docker-compose.yml
   
               # Restart the services with the new image
-              docker compose down
-              docker compose pull
-              docker compose up -d --remove-orphans
+              docker compose stop apigateway
+              docker compose rm -f apigateway
+              docker compose pull apigateway
+              docker compose up -d apigateway --remove-orphans
             EOF
 
         - name: cleanup
