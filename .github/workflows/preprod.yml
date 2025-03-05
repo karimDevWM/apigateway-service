@@ -77,7 +77,7 @@ jobs:
         
         - name: Update Docker Compose Image Tag and Restart Services
           run: |
-            ssh -tt ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
               cd ${{ secrets.WORK_DIR }}
   
               # Backup existing docker-compose.yml
