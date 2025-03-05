@@ -89,7 +89,7 @@ jobs:
               # Restart the services with the new image
               docker compose stop api-gateway
               docker compose rm -f api-gateway
-              docker compose pull api-gateway
+              docker compose pull ghcr.io/karimdevwm/${{env.REPO_NAME}}:${{env.NEW_BUILD_NUMBER}}
               docker compose up -d api-gateway --remove-orphans
             EOF
 
