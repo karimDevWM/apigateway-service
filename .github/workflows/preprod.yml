@@ -73,7 +73,7 @@ jobs:
             ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
         - name: Debug SSH Connection
-          run: ssh -vvv -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo SSH Connection Successful"
+          run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo SSH Connection Successful"
         
         - name: Update Docker Compose Image Tag and Restart Services
           run: |
@@ -84,7 +84,7 @@ jobs:
               cp docker-compose.yml docker-compose.yml.bak
   
               # Replace the old image tag with the new one from the pipeline
-              sed -i 's|ghcr.io/karimdevwm/${{env.REPO_NAME}}:[^ ]*|ghcr.io/karimdevwm/${{env.REPO_NAME}}:${{env.NEW_BUILD_NUMBER}}|' docker-compose.yml
+              sed -i 's|ghcr.io/karimdevwm/${{env.REPO_NAME}}:[^ ]*|ghcr.io/karimdevwm/${REPO_NAME}:${NEW_BUILD_NUMBER}|' docker-compose.yml
   
               # Restart the services with the new image
               docker compose stop api-gateway
