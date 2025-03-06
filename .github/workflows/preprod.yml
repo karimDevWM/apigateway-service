@@ -77,19 +77,29 @@ jobs:
         
         - name: Update Docker Compose Image Tag and Restart Services
           run: |
-            ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            ssh -tt ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
               cd ${{ secrets.WORK_DIR }}
-  
+        
+              echo "Updating docker-compose.yml with new image tag..."
+        
               # Backup existing docker-compose.yml
               cp docker-compose.yml docker-compose.yml.bak
-  
+        
+              # Debugging: Show current REPO_NAME and NEW_BUILD_NUMBER
+              echo "Repository Name: ${{ env.REPO_NAME }}"
+              echo "New Build Number: ${{ env.NEW_BUILD_NUMBER }}"
+        
               # Replace the old image tag with the new one
-              sed -i "s|ghcr.io/karimdevwm/${REPO_NAME}:[^ ]*|ghcr.io/karimdevwm/${REPO_NAME}:${NEW_BUILD_NUMBER}|" docker-compose.yml
-  
+              sed -i "s|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:[^ ]*|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.NEW_BUILD_NUMBER }}|" docker-compose.yml
+        
+              # Verify the change
+              echo "Updated docker-compose.yml:"
+              cat docker-compose.yml | grep "ghcr.io/karimdevwm"
+        
               # Restart the services with the new image
               docker compose stop api-gateway
               docker compose rm -f api-gateway
-              docker compose pull ghcr.io/karimdevwm/${{env.REPO_NAME}}:${{env.NEW_BUILD_NUMBER}}
+              docker compose pull ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.NEW_BUILD_NUMBER }}
               docker compose up -d api-gateway
             EOF
 
