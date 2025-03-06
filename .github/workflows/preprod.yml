@@ -47,8 +47,8 @@ jobs:
           gh api --method PATCH \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
-            /repos/${{ github.repository }}/actions/variables/NEW_BUILD_NUMBER \
-            -f name="NEW_BUILD_NUMBER" -f value="$NEW_BUILD_NUMBER"
+            /repos/${{ github.repository }}/actions/variables/BUILD_NUMBER \
+            -f name="BUILD_NUMBER" -f value="$NEW_BUILD_NUMBER"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -63,8 +63,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build --tag ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.NEW_BUILD_NUMBER }} .
-          docker push ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.NEW_BUILD_NUMBER }}
+          docker build --tag ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }} .
+          docker push ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
 
   deploy:
     needs: push-store-docker-image
@@ -100,12 +100,12 @@ jobs:
             cp docker-compose.yml docker-compose.yml.bak
 
             # Replace the old image tag with the new one from repository variable
-            sed -i "s|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:[^ ]*|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.NEW_BUILD_NUMBER }}|" docker-compose.yml
+            sed -i "s|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:[^ ]*|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}|" docker-compose.yml
 
             # Restart services
             docker compose stop api-gateway
             docker compose rm -f api-gateway
-            docker compose pull ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.NEW_BUILD_NUMBER }}
+            docker compose pull ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
             docker compose up -d api-gateway
           EOF
 
