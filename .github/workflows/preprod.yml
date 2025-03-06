@@ -83,8 +83,8 @@ jobs:
               # Backup existing docker-compose.yml
               cp docker-compose.yml docker-compose.yml.bak
   
-              # Replace the old image tag with the new one from the pipeline
-              sed -i 's|ghcr.io/karimdevwm/${{env.REPO_NAME}}:[^ ]*|ghcr.io/karimdevwm/${REPO_NAME}:${NEW_BUILD_NUMBER}|' docker-compose.yml
+              # Replace the old image tag with the new one
+              sed -i "s|ghcr.io/karimdevwm/${REPO_NAME}:[^ ]*|ghcr.io/karimdevwm/${REPO_NAME}:${NEW_BUILD_NUMBER}|" docker-compose.yml
   
               # Restart the services with the new image
               docker compose stop api-gateway
