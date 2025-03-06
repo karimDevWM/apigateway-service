@@ -96,11 +96,22 @@ jobs:
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             cd ${{ secrets.WORK_DIR }}
 
+            echo 'Updating docker-compose.yml with new image tag...'
+
             # Backup existing docker-compose.yml
             cp docker-compose.yml docker-compose.yml.bak
 
+            NEW_BUILD_NUMBER='${{ env.NEW_BUILD_NUMBER }}'
+
+              echo 'Repository Name:' \$REPO_NAME
+              echo 'New Build Number:' \$NEW_BUILD_NUMBER
+
             # Replace the old image tag with the new one from repository variable
             sed -i "s|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:[^ ]*|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}|" docker-compose.yml
+
+            # Verify the change
+              echo 'Updated docker-compose.yml:'
+              grep 'ghcr.io/karimdevwm' docker-compose.yml
 
             # Restart services
             docker compose stop api-gateway
