@@ -51,12 +51,17 @@ jobs:
       #     docker build --tag ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }} .
       #     docker push ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
 
+      - name: Authenticate to GitHub Container Registry
+        run: echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
       - name: Build docker image
         run: docker build -t $IMAGE_NAME:${{ env.IMAGE_TAG }} -t $IMAGE_NAME:latest .
       
-      - name: Push docker image
+      - name: Push Docker Image
         run: |
-          docker push $IMAGE_NAME:${{ env.IMAGE_TAG }}
+          BUILD_DATE=$(date +'%d%m%Y')
+          IMAGE_TAG="${BUILD_DATE}-0"
+          docker push $IMAGE_NAME:$IMAGE_TAG
           docker push $IMAGE_NAME:latest
 
   deploy:
