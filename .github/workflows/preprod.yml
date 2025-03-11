@@ -44,7 +44,7 @@ jobs:
 
       - name: Convert repository name to lowercase
         id: repo_name
-        run: echo "REPO_NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
+        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
 
       # - name: Build and Push Docker Image
       #   run: |
