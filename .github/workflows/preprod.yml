@@ -11,7 +11,7 @@ on:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
-  BUILD_DATE: ${date + '%d%m%Y'}
+  BUILD_DATE: $(date +'%d%m%Y')
 
 jobs:
   push-store-docker-image:
