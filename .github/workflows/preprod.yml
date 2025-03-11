@@ -4,6 +4,14 @@ on:
   push: 
     branches:
       - preprod
+      - main
+  pull_request: 
+    types: [closed]
+  workflow_dispatch: 
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  BUILD_DATE: ${date + '%d%m%Y'}
 
 jobs:
   push-store-docker-image:
@@ -11,44 +19,21 @@ jobs:
     permissions:
       contents: write
       packages: write
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
       
-      - name: Retrieve Previous Build Number
-        id: get-build-number
+      - name: Extract PR Number
         run: |
-          BUILD_NUMBER_FILE=".github/build_number.txt"
-          if [ -f "$BUILD_NUMBER_FILE" ]; then
-            BUILD_NUMBER=$(cat "$BUILD_NUMBER_FILE")
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "PR_NUMBER=${{ github.event.number }}" >> GITHUB_ENV
           else
-            BUILD_NUMBER=0
+            echo 'PR_NUMBER=0' >> $GITHUB_ENV
           fi
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
 
-      - name: Increment and Save Build Number
-        id: increment-build-number
-        run: |
-          NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
-          echo "$NEW_BUILD_NUMBER" > .github/build_number.txt
-          echo "NEW_BUILD_NUMBER=$NEW_BUILD_NUMBER" >> $GITHUB_ENV
-
-          # Commit the updated build number
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add .github/build_number.txt
-          git commit -m "Increment build number to $NEW_BUILD_NUMBER" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
-
-      - name: Save NEW_BUILD_NUMBER as a Repository Variable
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          gh api --method PATCH \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            /repos/${{ github.repository }}/actions/variables/BUILD_NUMBER \
-            -f name="BUILD_NUMBER" -f value="$NEW_BUILD_NUMBER"
+      - name: Generate Image Tag
+        run: echo "IMAGE_TAG=${BUILD_DATE}-${PR_NUMBER}" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -61,64 +46,83 @@ jobs:
         id: repo_name
         run: echo "REPO_NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
 
-      - name: Build and Push Docker Image
+      # - name: Build and Push Docker Image
+      #   run: |
+      #     docker build --tag ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }} .
+      #     docker push ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
+
+      - name: Build docker image
+        run: docker build -t $IMAGE_NAME:${{ env.IMAGE_TAG }} -t $IMAGE_NAME:latest .
+      
+      - name: Push docker image
         run: |
-          docker build --tag ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }} .
-          docker push ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
+          docker push $IMAGE_NAME:${{ env.IMAGE_TAG }}
+          docker push $IMAGE_NAME:latest
 
   deploy:
     needs: push-store-docker-image
     name: Deploy Docker Image
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Install SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      - name: Deploy using Ansible
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/ansible
+            ansible-playbook deploy_microservices.yml --extra-vars "service_name=apigateway"
 
-      - name: Retrieve NEW_BUILD_NUMBER from Repository Variables
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          NEW_BUILD_NUMBER=$(gh api \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            /repos/${{ github.repository }}/actions/variables/NEW_BUILD_NUMBER | jq -r '.value')
-          echo "NEW_BUILD_NUMBER=$NEW_BUILD_NUMBER" >> $GITHUB_ENV
+      # - name: Install SSH Key
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+      #     chmod 600 ~/.ssh/id_rsa
+      #     ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Debug SSH Connection
-        run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo SSH Connection Successful"
+      # - name: Retrieve NEW_BUILD_NUMBER from Repository Variables
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      #   run: |
+      #     NEW_BUILD_NUMBER=$(gh api \
+      #       -H "Accept: application/vnd.github+json" \
+      #       -H "Authorization: Bearer $GH_TOKEN" \
+      #       /repos/${{ github.repository }}/actions/variables/NEW_BUILD_NUMBER | jq -r '.value')
+      #     echo "NEW_BUILD_NUMBER=$NEW_BUILD_NUMBER" >> $GITHUB_ENV
 
-      - name: Update docker-compose.yml and Restart Services
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd ${{ secrets.WORK_DIR }}
+      # - name: Debug SSH Connection
+      #   run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo SSH Connection Successful"
 
-            echo 'Updating docker-compose.yml with new image tag...'
+      # - name: Update docker-compose.yml and Restart Services
+      #   run: |
+      #     ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+      #       cd ${{ secrets.WORK_DIR }}
 
-            # Backup existing docker-compose.yml
-            cp docker-compose.yml docker-compose.yml.bak
+      #       echo 'Updating docker-compose.yml with new image tag...'
 
-            NEW_BUILD_NUMBER='${{ env.NEW_BUILD_NUMBER }}'
+      #       # Backup existing docker-compose.yml
+      #       cp docker-compose.yml docker-compose.yml.bak
 
-              echo 'Repository Name:' \$REPO_NAME
-              echo 'New Build Number:' \$NEW_BUILD_NUMBER
+      #       NEW_BUILD_NUMBER='${{ env.NEW_BUILD_NUMBER }}'
 
-            # Replace the old image tag with the new one from repository variable
-            sed -i "s|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:[^ ]*|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}|" docker-compose.yml
+      #         echo 'Repository Name:' \$REPO_NAME
+      #         echo 'New Build Number:' \$NEW_BUILD_NUMBER
 
-            # Verify the change
-              echo 'Updated docker-compose.yml:'
-              grep 'ghcr.io/karimdevwm' docker-compose.yml
+      #       # Replace the old image tag with the new one from repository variable
+      #       sed -i "s|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:[^ ]*|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}|" docker-compose.yml
 
-            # Restart services
-            docker compose stop api-gateway
-            docker compose rm -f api-gateway
-            docker compose pull ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
-            docker compose up -d api-gateway
-          EOF
+      #       # Verify the change
+      #         echo 'Updated docker-compose.yml:'
+      #         grep 'ghcr.io/karimdevwm' docker-compose.yml
 
-      - name: Cleanup SSH Key
-        run: sudo rm -rf ~/.ssh
+      #       # Restart services
+      #       docker compose stop api-gateway
+      #       docker compose rm -f api-gateway
+      #       docker compose pull ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
+      #       docker compose up -d api-gateway
+      #     EOF
+
+      # - name: Cleanup SSH Key
+      #   run: sudo rm -rf ~/.ssh
