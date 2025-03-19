@@ -46,11 +46,6 @@ jobs:
         id: repo_name
         run: echo "IMAGE_NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print tolower($2)}')" >> $GITHUB_ENV
 
-      # - name: Build and Push Docker Image
-      #   run: |
-      #     docker build --tag ghcr.io/karimdevwm/${{ env.IMAGE_TAG }}:${{ env.BUILD_NUMBER }} .
-      #     docker push ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
-
       - name: Authenticate to GitHub Container Registry
         run: echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
 
