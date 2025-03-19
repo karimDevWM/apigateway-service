@@ -56,3 +56,5 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .github/workflows/preprod.yml
 .github/build_number.txt
+.github/workflows/preprod.yml.txt
+.github/workflows/preprod2.yml.txt
