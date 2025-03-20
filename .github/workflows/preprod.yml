@@ -65,5 +65,5 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/ansible/apigateway-service/
+            cd ~/task_service/deploy/
             ansible-playbook -i inventory deploy_microservices.yml
