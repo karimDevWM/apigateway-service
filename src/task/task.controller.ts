@@ -34,7 +34,7 @@ export class TaskController {
       const taskData = { ...createTaskDto, userId };
 
       console.log(
-        'sending task creation event to task microservice :',
+        'Sending task creation event to task microservice :',
         taskData,
       );
       return this.natsClient.send({ cmd: 'createTask' }, taskData);
