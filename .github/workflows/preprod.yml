@@ -51,15 +51,6 @@ jobs:
         run: |
             docker build --tag ghcr.io/karimdevwm/${{env.IMAGE_NAME}}:${{env.IMAGE_TAG}} .
             docker push ghcr.io/karimdevwm/${{env.IMAGE_NAME}}:${{env.IMAGE_TAG}}
-      # - name: Build docker image
-      #   run: docker build -t $IMAGE_NAME:${{ env.IMAGE_TAG }} -t $IMAGE_NAME:latest .
-      
-      # - name: Push Docker Image
-      #   run: |
-      #     BUILD_DATE=$(date +'%d%m%Y')
-      #     IMAGE_TAG="${BUILD_DATE}-0"
-      #     docker push $IMAGE_NAME:$IMAGE_TAG
-      #     docker push $IMAGE_NAME:latest
 
   deploy:
     needs: push-store-docker-image
@@ -75,56 +66,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/ansible
-            ansible-playbook deploy_microservices.yml --extra-vars "service_name=apigateway"
-
-      # - name: Install SSH Key
-      #   run: |
-      #     mkdir -p ~/.ssh
-      #     echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-      #     chmod 600 ~/.ssh/id_rsa
-      #     ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      # - name: Retrieve NEW_BUILD_NUMBER from Repository Variables
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      #   run: |
-      #     NEW_BUILD_NUMBER=$(gh api \
-      #       -H "Accept: application/vnd.github+json" \
-      #       -H "Authorization: Bearer $GH_TOKEN" \
-      #       /repos/${{ github.repository }}/actions/variables/NEW_BUILD_NUMBER | jq -r '.value')
-      #     echo "NEW_BUILD_NUMBER=$NEW_BUILD_NUMBER" >> $GITHUB_ENV
-
-      # - name: Debug SSH Connection
-      #   run: ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo SSH Connection Successful"
-
-      # - name: Update docker-compose.yml and Restart Services
-      #   run: |
-      #     ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-      #       cd ${{ secrets.WORK_DIR }}
-
-      #       echo 'Updating docker-compose.yml with new image tag...'
-
-      #       # Backup existing docker-compose.yml
-      #       cp docker-compose.yml docker-compose.yml.bak
-
-      #       NEW_BUILD_NUMBER='${{ env.NEW_BUILD_NUMBER }}'
-
-      #         echo 'Repository Name:' \$REPO_NAME
-      #         echo 'New Build Number:' \$NEW_BUILD_NUMBER
-
-      #       # Replace the old image tag with the new one from repository variable
-      #       sed -i "s|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:[^ ]*|ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}|" docker-compose.yml
-
-      #       # Verify the change
-      #         echo 'Updated docker-compose.yml:'
-      #         grep 'ghcr.io/karimdevwm' docker-compose.yml
-
-      #       # Restart services
-      #       docker compose stop api-gateway
-      #       docker compose rm -f api-gateway
-      #       docker compose pull ghcr.io/karimdevwm/${{ env.REPO_NAME }}:${{ env.BUILD_NUMBER }}
-      #       docker compose up -d api-gateway
-      #     EOF
-
-      # - name: Cleanup SSH Key
-      #   run: sudo rm -rf ~/.ssh
+            ansible-playbook -i inventory deploy_microservices.yml
