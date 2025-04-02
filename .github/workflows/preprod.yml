@@ -12,6 +12,25 @@ env:
   BUILD_DATE: $(date +'%d%m%Y')
 
 jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      
+      - name: set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      
+      - name: install dependencies
+        run: npm install
+      
+      - name: Run unit tests
+        run: npm run tests
+
   push-store-docker-image:
     runs-on: ubuntu-latest
     permissions:
