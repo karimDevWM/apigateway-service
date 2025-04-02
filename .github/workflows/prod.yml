@@ -4,7 +4,6 @@ on:
   pull_request: 
     branches:
       - main
-    types: [closed]
   workflow_dispatch: 
 
 env:
@@ -31,7 +30,7 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
-  push-store-docker-image:
+  build-push-store-docker-image:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -72,7 +71,7 @@ jobs:
             docker push ghcr.io/karimdevwm/${{env.IMAGE_NAME}}:${{env.IMAGE_TAG}}
 
   deploy:
-    needs: push-store-docker-image
+    needs: build-push-store-docker-image
     name: Deploy Docker Image
     runs-on: ubuntu-latest
     
