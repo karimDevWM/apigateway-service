@@ -29,6 +29,9 @@ jobs:
       
       - name: Run unit tests
         run: npm run test
+      
+      - name: Run integration tests
+        run: npm run test:e2e
 
   build-push-store-docker-image:
     runs-on: ubuntu-latest
