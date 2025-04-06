@@ -37,7 +37,9 @@ describe('AuthController', () => {
       // Ensure there are no validation errors since data is valid
       expect(errors.length).toBe(0);
 
-      natsClientMock.send.mockReturnValue(of({ success: true, userId: 1 }));
+      natsClientMock.send.mockReturnValue(
+        of({ success: true, userId: 'dfgdg89' }),
+      );
 
       const result = lastValueFrom(authController.createUser(dto));
 
@@ -45,7 +47,10 @@ describe('AuthController', () => {
         { cmd: 'createUser' },
         dto,
       );
-      await expect(result).resolves.toEqual({ success: true, userId: 1 });
+      await expect(result).resolves.toEqual({
+        success: true,
+        userId: 'dfgdg89',
+      });
     });
   });
 
