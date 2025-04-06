@@ -3,6 +3,7 @@ import {
   Controller,
   Inject,
   Post,
+  Req,
   UnauthorizedException,
   UsePipes,
   ValidationPipe,
@@ -19,7 +20,7 @@ export class TaskController {
   @Post('/createTask')
   @UsePipes(ValidationPipe)
   async createTask(
-    req: Request,
+    @Req() req: Request,
     @Body(new ValidationPipe({ whitelist: true })) createTaskDto: CreateTaskDto,
   ): Promise<{ success: boolean; taskId: number }> {
     type ValidateTokenResponse = { userId: string };
